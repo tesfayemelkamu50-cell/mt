@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIZZY 12 | Live Cloud Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #111122; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; margin: 0 auto; }
+        @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
+        
+        /* Timer & ID */
+        .timer-box { font-size: 4rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); }
+        .status-bar { background: #1a1a2e; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 1px solid #333; }
+        
+        /* Grid */
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
+        .num-card { position: relative; height: 140px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.3s; overflow: hidden; }
+        .num-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 20%, transparent); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
+        .odd-badge { background: var(--primary); color: black; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; margin-top: 4px; }
+        
+        /* Win Popup */
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5, 5, 10, 0.98); border: 4px solid gold; border-radius: 20px; z-index: 1000; padding: 30px; text-align: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(255, 215, 0, 0.3); }
+        #win-popup.show { transform: translate(-50%, -50%) scale(1); }
+        
+        /* Admin */
+        .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; height: fit-content; }
+        .hidden { display: none !important; }
+        .request-item { display: flex; justify-content: space-between; align-items: center; background: #05050a; padding: 10px; margin-bottom: 8px; border-radius: 8px; border-left: 4px solid var(--accent); }
+        .btn-ok { background: var(--primary); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-draw { width: 100%; background: gold; color: black; padding: 12px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="win-popup">
+        <div style="color: gold; font-size: 1.2rem; font-weight: bold;">🎊 WINNER ANNOUNCED 🎊</div>
+        <div style="font-size: 2.8rem; margin: 15px 0; color: white;" id="popup-id">...</div>
+        <div style="color: var(--primary); font-size: 2.2rem; font-weight: 900;"><span id="popup-prize">0</span> ETB</div>
+        <p style="margin-top: 10px; color: #aaa;">Winning Number: <b id="popup-num" style="color:white">#0</b></p>
+    </div>
+
+    <div class="container">
+        <div class="game-side">
+            <div id="timer" class="timer-box">05:00</div>
+            <div class="status-bar">
+                PLAYER ID: <b id="display-id" style="color:var(--accent)">...</b>
+            </div>
+            
+            <h3 style="text-align:center; color:#555; font-size:0.9rem; letter-spacing:1px;">TAP A NUMBER TO JOIN</h3>
+            <div class="grid" id="grid"></div>
+        </div>
+
+        <div class="admin-side" id="admin-panel">
+            <h3 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; margin-top:0;">🔒 ADMIN PANEL</h3>
+            <div id="admin-content" class="hidden">
+                <div style="background:#000; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid #222;">
+                    <small style="color:#888">SESSION REVENUE</small><br>
+                    <span style="color:var(--primary); font-size:1.8rem; font-weight:bold;" id="rev-display">0</span> <small>ETB</small>
+                </div>
+                
+                <h4 style="margin-bottom:10px; font-size:0.8rem; color:var(--accent)">PENDING ACTIVATIONS</h4>
+                <div id="request-queue">
+                    <p style="color:#444; font-size:0.8rem; text-align:center;">No pending requests</p>
+                </div>
+                
+                <button onclick="triggerDraw()" class="btn-draw">DRUMROLL & DRAW</button>
+                <button onclick="location.reload()" style="width:100%; background:none; border:1px solid #333; color:#555; margin-top:10px; cursor:pointer; padding:5px;">Refresh Feed</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SUPABASE_URL = 'https://fixevmectotnqrwkupvp.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_4SWF8XqX8s5Eut93C3wMOA_dLOZQ2Vq';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let myID = localStorage.getItem('fizzy_player_id') || "PX-" + Math.floor(100 + Math.random() * 899);
+        localStorage.setItem('fizzy_player_id', myID);
+        document.getElementById('display-id').innerText = myID;
+
+        let odds = Array(13).fill(2.0);
+        let ticketPrice = 20;
+        let isAdmin = false;
+
+        // --- GRID GENERATION ---
+        function initGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for(let i=1; i<=12; i++) {
+                // Fixed-random odds based on the number so they don't jump every second
+                odds[i] = (1.5 + (Math.abs(Math.sin(i)) * 8)).toFixed(1);
+                grid.innerHTML += `
+                    <div class="num-card" style="background-image: url('https://robohash.org/${i}?set=set4')" onclick="placeBet(${i})">
+                        <div class="card-overlay">
+                            <span style="font-weight:900; font-size:1.4rem;">#${i}</span>
+                            <div class="odd-badge">${odds[i]}x</div>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        // --- PLAYER ACTIONS ---
+        async function placeBet(n) {
+            const ok = confirm(`Join Number #${n} for ${ticketPrice} ETB?`);
+            if(!ok) return;
+
+            const { error } = await _supabase.from('bets').insert([
+                { player_id: myID, number: n, odd: parseFloat(odds[n]), status: 'pending' }
+            ]);
+            
+            if(!error) {
+                alert("✅ Request Sent! Please pay at the counter to activate your number.");
+            } else {
+                alert("Error sending request. Check connection.");
+            }
+        }
+
+        // --- ADMIN ACTIONS ---
+        async function fetchPendingBets() {
+            if(!isAdmin) return;
+            const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
+            const q = document.getElementById('request-queue');
+            
+            if(!data || data.length === 0) {
+                q.innerHTML = '<p style="color:#444; font-size:0.8rem; text-align:center;">No pending requests</p>';
+                return;
+            }
+
+            q.innerHTML = data.map(b => `
+                <div class="request-item">
+                    <div>
+                        <b style="color:white">${b.player_id}</b><br>
+                        <small style="color:#888">Picked #${b.number}</small>
+                    </div>
+                    <button class="btn-ok" onclick="verifyBet(${b.id})">PAID</button>
+                </div>
+            `).join('');
+        }
+
+        async function verifyBet(id) {
+            await _supabase.from('bets').update({ status: 'paid' }).eq('id', id);
+            fetchPendingBets();
+        }
+
+        async function triggerDraw() {
+            const { data: paidBets } = await _supabase.from('bets').select('*').eq('status', 'paid');
+            const winNum = Math.floor(Math.random() * 12) + 1;
+            
+            // Logic: Pick a winner only if they paid for the correct number
+            let winner = paidBets ? paidBets.find(b => b.number === winNum) : null;
+            
+            const winData = { 
+                last_winner_id: winner ? winner.player_id : 'NO WINNER',
+                last_win_num: winNum,
+                prize: winner ? (winner.odd * ticketPrice) : 0
+            };
+
+            await _supabase.from('game_state').update(winData).eq('id', 1);
+            
+            // Wipe the bets table for next round
+            await _supabase.from('bets').delete().neq('id', 0);
+        }
+
+        // --- REAL-TIME ENGINE ---
+        _supabase.channel('game-updates')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, () => {
+                if(isAdmin) fetchPendingBets();
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, payload => {
+                showWinner(payload.new);
+            })
+            .subscribe();
+
+        function showWinner(data) {
+            document.getElementById('popup-id').innerText = data.last_winner_id;
+            document.getElementById('popup-num').innerText = data.last_win_num;
+            document.getElementById('popup-prize').innerText = Math.floor(data.prize);
+            
+            document.getElementById('win-popup').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('win-popup').classList.remove('show');
+            }, 7000);
+        }
+
+        function unlockAdmin() {
+            const pin = prompt("Enter Admin PIN:");
+            if(pin === "1234") {
+                isAdmin = true;
+                document.getElementById('admin-content').classList.remove('hidden');
+                fetchPendingBets();
+            } else {
+                alert("Incorrect PIN");
+            }
+        }
+
+        // Simple Visual Timer (Local sync - in a real app, sync this to DB too)
+        setInterval(() => {
+            let now = new Date();
+            let sec = 59 - now.getSeconds();
+            let min = 4 - (now.getMinutes() % 5);
+            document.getElementById('timer').innerText = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+            if(min === 0 && sec === 0 && isAdmin) triggerDraw(); 
+        }, 1000);
+
+        initGrid();
+    </script>
+</body>
+</html>
