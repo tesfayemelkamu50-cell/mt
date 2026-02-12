@@ -3,102 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIZZY 12 | Ultimate Edition</title>
+    <title>FIZZY 12 | Professional Shop Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #111122; --gold: #ffd700; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; overflow-x: hidden; }
-        .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; overflow-x: hidden; }
+        .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 15px; margin: 0 auto; }
         @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
+        
+        /* Timer & Flash Effects */
+        .timer-box { font-size: 4.5rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); transition: 0.3s; }
+        .panic { color: var(--danger) !important; text-shadow: 0 0 25px var(--danger) !important; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+        
+        .status-bar { background: #1a1a2e; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; margin-bottom: 15px; }
 
-        /* Timer & Status */
-        .timer-box { font-size: 4rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); margin-bottom: 5px; }
-        .status-bar { background: #1a1a2e; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 1px solid #333; font-size: 0.9rem; }
+        /* Grid */
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .num-card { position: relative; height: 175px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.4s; overflow: hidden; }
+        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
+        .num-text { font-weight: 900; font-size: 2.5rem; text-shadow: 2px 2px 10px #000; }
+        .odd-badge { background: var(--primary); color: #000; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; }
 
-        /* Grid & Beautiful Model Cards */
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
-        .num-card { position: relative; height: 160px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.3s; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .num-card:hover { border-color: var(--accent); transform: scale(1.03); z-index: 5; }
-        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 15%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12px; }
-        .num-text { font-weight: 900; font-size: 2rem; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); margin-bottom: 2px; }
-        .odd-badge { background: var(--primary); color: black; font-weight: 900; padding: 2px 10px; border-radius: 5px; font-size: 0.85rem; }
+        /* Highlight 8 & 9 */
+        .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
 
-        /* Shop-Wide Winner Reveal */
-        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 420px; background: linear-gradient(135deg, #0a0a19, #000); border: 4px solid var(--gold); border-radius: 20px; z-index: 1000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 100px rgba(255, 215, 0, 0.2); }
+        /* Lucky Number Animation */
+        #lucky-flash { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 30px; border-radius: 50px; font-weight: 900; font-size: 1.5rem; z-index: 5000; display: none; box-shadow: 0 0 30px var(--gold); animation: pulse 0.3s infinite; }
+
+        /* Result Popups */
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5,5,15,0.98); border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #win-popup.show { transform: translate(-50%, -50%) scale(1); }
-        .winner-model-host { position: absolute; top: -110px; left: 50%; transform: translateX(-50%); width: 260px; filter: drop-shadow(0 0 15px var(--gold)); opacity: 0; transition: 1s; }
-        #win-popup.show .winner-model-host { opacity: 1; }
-        .big-number-reveal { font-size: 5rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px var(--gold); display: block; margin: 10px 0; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.1);} 100% {transform: scale(1);} }
+        .winner-host { position: absolute; top: -110px; left: 50%; transform: translateX(-50%); width: 240px; opacity: 0; transition: 1s; }
+        #win-popup.show .winner-host { opacity: 1; }
 
-        /* Personal Win Alert (For Winner's Phone) */
-        #personal-win-alert { position: fixed; bottom: -150px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: linear-gradient(45deg, #ffd700, #ffae00); color: #000; padding: 20px; border-radius: 15px; text-align: center; font-weight: bold; box-shadow: 0 -5px 30px rgba(255, 215, 0, 0.5); z-index: 2000; transition: 0.5s ease-in-out; }
-        #personal-win-alert.active { bottom: 20px; }
-
-        /* Admin Styles */
-        .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; height: fit-content; }
+        /* Admin */
+        .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; }
         .hidden { display: none !important; }
-        .req-card { background: #05050a; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); }
-        .btn-draw { width: 100%; background: linear-gradient(45deg, #ffd700, #ffae00); color: black; padding: 14px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 15px; text-transform: uppercase; }
+        .req-card { background: #000; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
+    <div id="lucky-flash">🔥 HOT NUMBER: <span id="lucky-num">#8</span> 🔥</div>
+
     <div id="win-popup">
-        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZqOHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/l41lI4bEBpG2LQXuw/giphy.gif" class="winner-model-host">
+        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZqOHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/l41lI4bEBpG2LQXuw/giphy.gif" class="winner-host">
         <div style="margin-top: 60px;">
-            <small style="color: var(--gold); letter-spacing: 3px;">WINNING NUMBER</small>
-            <span class="big-number-reveal" id="popup-num">#0</span>
-            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,215,0,0.2);">
-                <small style="color: #aaa;">WINNER ID</small>
-                <div style="font-size: 1.8rem; font-weight: 900;" id="popup-id">...</div>
-                <div style="color: var(--primary); font-size: 2rem; font-weight: 900; margin-top: 5px;">
-                    <span id="popup-prize">0</span> <small>ETB</small>
-                </div>
+            <small style="color:var(--gold)">WINNING NUMBER</small>
+            <div id="popup-num" style="font-size: 5rem; font-weight: 900; color: white;">#0</div>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+                <div id="popup-id" style="font-size: 1.5rem; font-weight: bold;">...</div>
+                <div id="popup-prize" style="font-size: 2.2rem; color: var(--primary); font-weight: 900;">0 ETB</div>
             </div>
         </div>
     </div>
 
-    <div id="personal-win-alert">
-        <div style="font-size: 1.5rem;">🎉 YOU WON! 🎉</div>
-        <p>Show this screen to the counter to claim your prize.</p>
-        <button onclick="this.parentElement.classList.remove('active')" style="background:#000; color:#fff; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">I'M COMING!</button>
-    </div>
-
     <div class="container">
         <div class="game-side">
-            <div id="timer" class="timer-box">00:00</div>
-            <div class="status-bar">PLAYER ID: <b id="display-id" style="color:var(--accent)">...</b></div>
+            <div id="timer" class="timer-box">3:00</div>
+            <div class="status-bar">
+                <span>ID: <b id="display-id" style="color:var(--accent)">...</b></span>
+                <button onclick="toggleMute()" id="mute-btn" style="background:none; border:1px solid #444; color:#888; border-radius:5px; padding:4px 10px; cursor:pointer;">🔊 ON</button>
+            </div>
             <div class="grid" id="grid"></div>
         </div>
 
         <div class="admin-side">
-            <h3 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#555; font-size:0.9rem;">🔒 ADMIN DASHBOARD</h3>
+            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#444;">🔒 ADMIN</h4>
             <div id="admin-content" class="hidden">
-                <div style="background:#000; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #222; text-align:center;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div><small style="color:#888">IN</small><br><span id="total-in" style="color:var(--accent); font-weight:bold;">0</span></div>
-                        <div><small style="color:#888">OUT</small><br><span id="total-out" style="color:var(--danger); font-weight:bold;">0</span></div>
-                    </div>
-                    <div style="margin-top:10px; border-top:1px solid #222; padding-top:10px;">
-                        <small style="color:#888">NET PROFIT</small><br>
-                        <span id="rev-display" style="color:var(--primary); font-size:1.8rem; font-weight:bold;">0</span> <small>ETB</small>
-                    </div>
+                <div style="background:#000; padding:15px; border-radius:10px; text-align:center; border:1px solid #222; margin-bottom:15px;">
+                    <small style="color:#888">SHOP PROFIT</small><br>
+                    <span id="rev-display" style="font-size: 2rem; font-weight: bold; color: var(--primary);">0</span> <small>ETB</small>
                 </div>
-
-                <div style="margin-bottom:15px;">
-                    <small style="color:#888">PRICE PER TICKET:</small>
-                    <div style="display:flex; gap:8px; margin-top:5px;">
-                        <input type="number" id="set-price" value="20" style="width:70px; background:#000; color:#fff; border:1px solid #444; padding:8px; border-radius:5px;">
-                        <button onclick="updateCloudPrice()" style="flex:1; background:var(--accent); border:none; border-radius:5px; font-weight:bold; cursor:pointer; color:#000;">SYNC</button>
-                    </div>
-                </div>
-
-                <h4 style="margin-bottom:10px; font-size:0.8rem; color:var(--accent);">PENDING PAYMENTS</h4>
-                <div id="request-queue"></div>
-                
-                <button onclick="triggerDraw()" class="btn-draw">DRUMROLL & DRAW</button>
-                <button onclick="resetDailyStats()" style="width:100%; background:none; border:1px solid #444; color:#666; margin-top:15px; padding:6px; border-radius:5px; cursor:pointer; font-size:0.7rem;">RESET DAY</button>
+                <div id="request-queue" style="max-height: 300px; overflow-y: auto;"></div>
+                <button onclick="triggerDraw()" class="btn-draw">SMART DRAW</button>
             </div>
         </div>
     </div>
@@ -112,7 +92,13 @@
         localStorage.setItem('fizzy_player_id', myID);
         document.getElementById('display-id').innerText = myID;
 
-        let odds = Array(13).fill(2.0), ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false;
+        let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false, isMuted = false;
+        const alert30s = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+        const tickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const luckySound = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
+
+        function toggleMute() { isMuted = !isMuted; document.getElementById('mute-btn').innerText = isMuted ? "🔇 OFF" : "🔊 ON"; }
+        function playSound(sound) { if(!isMuted) { sound.currentTime = 0; sound.play().catch(()=>{}); } }
 
         function initGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = '';
@@ -124,81 +110,98 @@
                 "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=400&q=80",
                 "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80",
                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1529139513055-1197978975b6?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1529139513055-1197978975b6?auto=format&fit=crop&w=400&q=80", // #8
+                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80", // #9
                 "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&w=400&q=80",
                 "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
                 "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80"
             ];
             for(let i=1; i<=12; i++) {
-                odds[i] = (1.5 + (Math.abs(Math.sin(i)) * 9.5)).toFixed(1);
-                grid.innerHTML += `<div class="num-card" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odds[i]}x</div></div></div>`;
+                let odd = (1.5 + (Math.abs(Math.sin(i)) * 9.5)).toFixed(1);
+                let hotClass = (i === 8 || i === 9) ? "hot-card" : "";
+                grid.innerHTML += `<div id="card-${i}" class="num-card ${hotClass}" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i}, ${odd})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odd}x</div></div></div>`;
             }
         }
 
-        async function placeBet(n) {
-            if(!confirm(`Join #${n} for ${ticketPrice} ETB?`)) return;
-            const { error } = await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: parseFloat(odds[n]), status: 'pending', price: ticketPrice }]);
-            if(!error) alert("✅ Sent! Pay at counter.");
-        }
-
-        async function verifyBet(id, price) {
-            await _supabase.from('bets').update({ status: 'paid' }).eq('id', id);
-            sessionIn += price; updateAccountingUI(); fetchPendingBets();
+        async function placeBet(n, odd) {
+            if(!confirm(`Bet #${n} for ${ticketPrice} ETB?`)) return;
+            await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: parseFloat(odd), status: 'pending', price: ticketPrice }]);
+            alert("✅ Request sent! Pay at counter.");
         }
 
         async function triggerDraw() {
-            const { data: paidBets } = await _supabase.from('bets').select('*').eq('status', 'paid');
-            const winNum = Math.floor(Math.random() * 12) + 1;
-            let winner = paidBets ? paidBets.find(b => b.number === winNum) : null;
-            let prize = winner ? (winner.odd * winner.price) : 0;
+            const { data: paid } = await _supabase.from('bets').select('*').eq('status', 'paid');
+            let totalIn = paid ? paid.reduce((sum, b) => sum + b.price, 0) : 0;
+            sessionIn += totalIn;
+            let winNum = 0, winner = null, prize = 0, found = false;
+            let attempts = 0;
+            while (attempts < 30 && !found) {
+                let trialNum = Math.floor(Math.random() * 12) + 1;
+                let trialWinner = paid ? paid.find(b => b.number === trialNum) : null;
+                let trialPrize = trialWinner ? (trialWinner.odd * trialWinner.price) : 0;
+                if (trialPrize <= totalIn) { winNum = trialNum; winner = trialWinner; prize = trialPrize; found = true; }
+                attempts++;
+            }
+            if (!found) {
+                const betNums = paid ? paid.map(b => b.number) : [];
+                for (let i = 1; i <= 12; i++) if (!betNums.includes(i)) { winNum = i; break; }
+            }
             sessionOut += prize;
             await _supabase.from('game_state').update({ last_winner_id: winner ? winner.player_id : 'NO WINNER', last_win_num: winNum, prize: prize }).eq('id', 1);
-            updateAccountingUI(); await _supabase.from('bets').delete().neq('id', 0);
+            await _supabase.from('bets').delete().neq('id', 0);
+            updateUI();
         }
 
-        async function updateCloudPrice() {
-            const newPrice = parseInt(document.getElementById('set-price').value);
-            await _supabase.from('game_state').update({ ticket_price: newPrice }).eq('id', 1);
-        }
+        async function verifyBet(id, p) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); sessionIn += p; updateUI(); fetchPending(); }
 
-        _supabase.channel('room1').on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPendingBets())
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, payload => {
-                if(payload.new.ticket_price) ticketPrice = payload.new.ticket_price;
-                showWinner(payload.new);
+        _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPending())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, p => {
+                const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3');
+                playSound(winSound);
+                document.getElementById('popup-num').innerText = "#" + p.new.last_win_num;
+                document.getElementById('popup-id').innerText = p.new.last_winner_id;
+                document.getElementById('popup-prize').innerText = Math.floor(p.new.prize) + " ETB";
+                document.getElementById('win-popup').classList.add('show');
+                if(p.new.last_winner_id === myID) {
+                    localStorage.getItem('isMuted') !== 'true' && luckySound.play();
+                }
+                setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); initGrid(); }, 10000);
             }).subscribe();
 
-        function showWinner(data) {
-            new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3').play();
-            document.getElementById('popup-num').innerText = "#" + data.last_win_num;
-            document.getElementById('popup-id').innerText = data.last_winner_id;
-            document.getElementById('popup-prize').innerText = Math.floor(data.prize);
-            document.getElementById('win-popup').classList.add('show');
-            if (data.last_winner_id === myID) {
-                document.getElementById('personal-win-alert').classList.add('active');
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-            }
-            setTimeout(() => { 
-                document.getElementById('win-popup').classList.remove('show'); 
-                document.getElementById('personal-win-alert').classList.remove('active');
-                initGrid(); 
-            }, 10000);
-        }
-
-        async function fetchPendingBets() {
+        async function fetchPending() {
             const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
             const q = document.getElementById('request-queue');
-            q.innerHTML = data.length ? data.map(b => `<div class="req-card"><div><b>${b.player_id}</b> (#${b.number})</div><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary);border:none;color:white;padding:8px;border-radius:5px;cursor:pointer;">PAID</button></div>`).join('') : '<p style="text-align:center;color:#444">No requests</p>';
+            q.innerHTML = data.length ? data.map(b => `<div class="req-card"><div><b>${b.player_id}</b> (#${b.number})</div><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;color:black;font-weight:bold;">PAID</button></div>`).join('') : '<p style="text-align:center;color:#444">Waiting...</p>';
         }
 
-        function unlockAdmin() { if(prompt("PIN:") === "1234") { isAdmin = true; document.getElementById('admin-content').classList.remove('hidden'); fetchPendingBets(); } }
-        function updateAccountingUI() { document.getElementById('total-in').innerText = sessionIn; document.getElementById('total-out').innerText = sessionOut; document.getElementById('rev-display').innerText = (sessionIn - sessionOut).toFixed(0); }
-        function resetDailyStats() { if(confirm("Reset?")) { sessionIn = 0; sessionOut = 0; updateAccountingUI(); } }
-        
+        function unlockAdmin() { if(prompt("PIN:") === "1234") { isAdmin = true; document.getElementById('admin-content').classList.remove('hidden'); fetchPending(); } }
+        function updateUI() { document.getElementById('rev-display').innerText = (sessionIn - sessionOut).toFixed(0); }
+
         setInterval(() => {
-            let sec = 59 - new Date().getSeconds();
-            document.getElementById('timer').innerText = `0:${sec < 10 ? '0' : ''}${sec}`;
-            if(sec === 0 && isAdmin) triggerDraw();
+            let now = new Date();
+            let total = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+            let left = 180 - (total % 180);
+            const tBox = document.getElementById('timer');
+            tBox.innerText = `${Math.floor(left/60)}:${(left%60)<10?'0':''}${left%60}`;
+            
+            // 🔥 LUCKY NUMBER FLASH AT 1:00
+            if(left === 60) {
+                let lucky = [8, 9, Math.floor(Math.random() * 12) + 1][Math.floor(Math.random()*3)];
+                document.getElementById('lucky-num').innerText = "#" + lucky;
+                document.getElementById('lucky-flash').style.display = 'block';
+                document.getElementById(`card-${lucky}`).style.transform = "scale(1.1)";
+                document.getElementById(`card-${lucky}`).style.zIndex = "10";
+                playSound(luckySound);
+                setTimeout(() => { 
+                    document.getElementById('lucky-flash').style.display = 'none';
+                    document.getElementById(`card-${lucky}`).style.transform = "scale(1)";
+                }, 10000);
+            }
+
+            if(left <= 30) tBox.classList.add('panic'); else tBox.classList.remove('panic');
+            if(left === 30) playSound(alert30s);
+            if(left <= 5 && left > 0) playSound(tickSound);
+            if(left === 180 && isAdmin) triggerDraw();
         }, 1000);
 
         initGrid();
