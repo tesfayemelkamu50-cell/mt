@@ -3,78 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIZZY 12 | Live Cloud Game</title>
+    <title>FIZZY 12 | Luxury Retail Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #111122; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; overflow-x: hidden; }
-        .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; margin: 0 auto; }
+        .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin: 0 auto; }
         @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
-        
-        /* Timer & ID */
-        .timer-box { font-size: 4rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); }
-        .status-bar { background: #1a1a2e; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 1px solid #333; }
-        
-        /* Grid */
+
+        /* Timer & Status */
+        .timer-box { font-size: 4rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); margin-bottom: 5px; }
+        .status-bar { background: #1a1a2e; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 1px solid #333; font-size: 0.9rem; }
+
+        /* Grid & Beautiful Model Cards */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
-        .num-card { position: relative; height: 140px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.3s; overflow: hidden; }
-        .num-card:hover { border-color: var(--accent); transform: translateY(-3px); }
-        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 20%, transparent); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
-        .odd-badge { background: var(--primary); color: black; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; margin-top: 4px; }
-        
-        /* Win Popup */
-        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5, 5, 10, 0.98); border: 4px solid gold; border-radius: 20px; z-index: 1000; padding: 30px; text-align: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 50px rgba(255, 215, 0, 0.3); }
+        .num-card { position: relative; height: 160px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.3s; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .num-card:hover { border-color: var(--accent); transform: scale(1.03); z-index: 5; }
+        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 15%, transparent 60%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12px; }
+        .num-text { font-weight: 900; font-size: 2rem; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); margin-bottom: 2px; }
+        .odd-badge { background: var(--primary); color: black; font-weight: 900; padding: 2px 10px; border-radius: 5px; font-size: 0.85rem; }
+
+        /* Winner Popup & Model Animation */
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 420px; background: rgba(5, 5, 10, 0.98); border: 4px solid gold; border-radius: 20px; z-index: 1000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 100px rgba(255, 215, 0, 0.2); }
         #win-popup.show { transform: translate(-50%, -50%) scale(1); }
-        
-        /* Admin */
+        .model-anim { position: absolute; bottom: 0; right: -30px; width: 200px; pointer-events: none; opacity: 0; transition: 1.2s; filter: drop-shadow(0 0 10px gold); }
+        #win-popup.show .model-anim { opacity: 1; right: 10px; }
+
+        /* Admin Dashboard */
         .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; height: fit-content; }
         .hidden { display: none !important; }
-        .request-item { display: flex; justify-content: space-between; align-items: center; background: #05050a; padding: 10px; margin-bottom: 8px; border-radius: 8px; border-left: 4px solid var(--accent); }
-        .btn-ok { background: var(--primary); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-draw { width: 100%; background: gold; color: black; padding: 12px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 15px; }
+        .req-card { background: #05050a; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); }
+        .btn-draw { width: 100%; background: linear-gradient(45deg, #ffd700, #ffae00); color: black; padding: 14px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
     <div id="win-popup">
-        <div style="color: gold; font-size: 1.2rem; font-weight: bold;">🎊 WINNER ANNOUNCED 🎊</div>
-        <div style="font-size: 2.8rem; margin: 15px 0; color: white;" id="popup-id">...</div>
-        <div style="color: var(--primary); font-size: 2.2rem; font-weight: 900;"><span id="popup-prize">0</span> ETB</div>
-        <p style="margin-top: 10px; color: #aaa;">Winning Number: <b id="popup-num" style="color:white">#0</b></p>
+        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJndXN3bm55amZ6eG55ZzRyeHh4eHh4eHh4eHh4eHh4eHh4eHh4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/3o7TKVUn7iM8FMEU24/giphy.gif" class="model-anim">
+        <div style="color: gold; font-size: 1.4rem; font-weight: bold; position: relative;">🏆 ROUND WINNER 🏆</div>
+        <div style="font-size: 3rem; margin: 15px 0; color: white; position: relative; font-weight: 900;" id="popup-id">...</div>
+        <div style="color: var(--primary); font-size: 2.5rem; font-weight: 900; position: relative;"><span id="popup-prize">0</span> <small style="font-size: 1rem;">ETB</small></div>
+        <p style="color: #aaa; position: relative; margin-top: 10px;">Lucky Number <b id="popup-num" style="color:white; font-size: 1.2rem;">#0</b></p>
     </div>
 
     <div class="container">
         <div class="game-side">
-            <div id="timer" class="timer-box">05:00</div>
-            <div class="status-bar">
-                PLAYER ID: <b id="display-id" style="color:var(--accent)">...</b>
-            </div>
-            
-            <h3 style="text-align:center; color:#555; font-size:0.9rem; letter-spacing:1px;">TAP A NUMBER TO JOIN</h3>
+            <div id="timer" class="timer-box">00:00</div>
+            <div class="status-bar">PLAYER ID: <b id="display-id" style="color:var(--accent)">...</b></div>
             <div class="grid" id="grid"></div>
         </div>
 
-        <div class="admin-side" id="admin-panel">
-            <h3 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; margin-top:0;">🔒 ADMIN PANEL</h3>
+        <div class="admin-side">
+            <h3 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#555; font-size:0.9rem;">🔒 ADMIN DASHBOARD</h3>
             <div id="admin-content" class="hidden">
-                <div style="background:#000; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; border:1px solid #222;">
-                    <small style="color:#888">SESSION REVENUE</small><br>
-                    <span style="color:var(--primary); font-size:1.8rem; font-weight:bold;" id="rev-display">0</span> <small>ETB</small>
+                <div style="background:#000; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #222;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:center;">
+                        <div><small style="color:#888">TOTAL IN</small><br><span id="total-in" style="color:var(--accent); font-weight:bold;">0</span></div>
+                        <div><small style="color:#888">TOTAL OUT</small><br><span id="total-out" style="color:var(--danger); font-weight:bold;">0</span></div>
+                    </div>
+                    <div style="text-align:center; margin-top:12px; border-top:1px solid #222; padding-top:12px;">
+                        <small style="color:#888">NET PROFIT</small><br>
+                        <span id="rev-display" style="color:var(--primary); font-size:1.8rem; font-weight:bold;">0</span> <small>ETB</small>
+                    </div>
                 </div>
-                
-                <h4 style="margin-bottom:10px; font-size:0.8rem; color:var(--accent)">PENDING ACTIVATIONS</h4>
-                <div id="request-queue">
-                    <p style="color:#444; font-size:0.8rem; text-align:center;">No pending requests</p>
+
+                <div style="margin-bottom:15px;">
+                    <small style="color:#888">TICKET PRICE (ETB):</small>
+                    <div style="display:flex; gap:8px; margin-top:5px;">
+                        <input type="number" id="set-price" value="20" style="width:70px; background:#000; color:#fff; border:1px solid #444; padding:8px; border-radius:5px;">
+                        <button onclick="updateCloudPrice()" style="flex:1; background:var(--accent); border:none; border-radius:5px; font-weight:bold; cursor:pointer; color:#000;">SYNC PRICE</button>
+                    </div>
                 </div>
+
+                <h4 style="margin-bottom:10px; font-size:0.8rem; color:var(--accent); text-transform:uppercase;">Pending Payouts</h4>
+                <div id="request-queue"></div>
                 
                 <button onclick="triggerDraw()" class="btn-draw">DRUMROLL & DRAW</button>
-                <button onclick="location.reload()" style="width:100%; background:none; border:1px solid #333; color:#555; margin-top:10px; cursor:pointer; padding:5px;">Refresh Feed</button>
+                <button onclick="resetDailyStats()" style="width:100%; background:none; border:1px solid #444; color:#666; margin-top:15px; padding:6px; border-radius:5px; cursor:pointer; font-size:0.7rem;">RESET BOOKKEEPING</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const SUPABASE_URL = 'https://fixevmectotnqrwkupvp.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_4SWF8XqX8s5Eut93C3wMOA_dLOZQ2Vq';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -85,126 +95,100 @@
 
         let odds = Array(13).fill(2.0);
         let ticketPrice = 20;
+        let sessionIn = 0, sessionOut = 0;
         let isAdmin = false;
 
-        // --- GRID GENERATION ---
         function initGrid() {
-            const grid = document.getElementById('grid');
+            const grid = document.getElementById('grid'); 
             grid.innerHTML = '';
+            const models = [
+                "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1529139513055-1197978975b6?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
+                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80"
+            ];
             for(let i=1; i<=12; i++) {
-                // Fixed-random odds based on the number so they don't jump every second
-                odds[i] = (1.5 + (Math.abs(Math.sin(i)) * 8)).toFixed(1);
-                grid.innerHTML += `
-                    <div class="num-card" style="background-image: url('https://robohash.org/${i}?set=set4')" onclick="placeBet(${i})">
-                        <div class="card-overlay">
-                            <span style="font-weight:900; font-size:1.4rem;">#${i}</span>
-                            <div class="odd-badge">${odds[i]}x</div>
-                        </div>
-                    </div>`;
+                odds[i] = (1.5 + (Math.abs(Math.sin(i)) * 9.5)).toFixed(1);
+                grid.innerHTML += `<div class="num-card" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odds[i]}x</div></div></div>`;
             }
         }
 
-        // --- PLAYER ACTIONS ---
         async function placeBet(n) {
-            const ok = confirm(`Join Number #${n} for ${ticketPrice} ETB?`);
-            if(!ok) return;
-
-            const { error } = await _supabase.from('bets').insert([
-                { player_id: myID, number: n, odd: parseFloat(odds[n]), status: 'pending' }
-            ]);
-            
-            if(!error) {
-                alert("✅ Request Sent! Please pay at the counter to activate your number.");
-            } else {
-                alert("Error sending request. Check connection.");
-            }
+            if(!confirm(`Place ${ticketPrice} ETB on Number #${n}?`)) return;
+            const { error } = await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: parseFloat(odds[n]), status: 'pending', price: ticketPrice }]);
+            if(!error) alert("✅ Sent! Pay at counter to activate.");
         }
 
-        // --- ADMIN ACTIONS ---
         async function fetchPendingBets() {
             if(!isAdmin) return;
             const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
             const q = document.getElementById('request-queue');
-            
-            if(!data || data.length === 0) {
-                q.innerHTML = '<p style="color:#444; font-size:0.8rem; text-align:center;">No pending requests</p>';
-                return;
-            }
-
-            q.innerHTML = data.map(b => `
-                <div class="request-item">
-                    <div>
-                        <b style="color:white">${b.player_id}</b><br>
-                        <small style="color:#888">Picked #${b.number}</small>
-                    </div>
-                    <button class="btn-ok" onclick="verifyBet(${b.id})">PAID</button>
-                </div>
-            `).join('');
+            q.innerHTML = data.length ? data.map(b => `<div class="req-card"><div><b>${b.player_id}</b><br><small style="color:#888">#${b.number} @ ${b.odd}x</small></div><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary); border:none; color:white; padding:8px 12px; border-radius:5px; cursor:pointer; font-weight:bold;">PAID</button></div>`).join('') : '<p style="text-align:center;color:#444;font-size:0.8rem;">Waiting for players...</p>';
         }
 
-        async function verifyBet(id) {
+        async function verifyBet(id, price) {
             await _supabase.from('bets').update({ status: 'paid' }).eq('id', id);
+            sessionIn += price;
+            updateAccountingUI();
             fetchPendingBets();
+        }
+
+        async function updateCloudPrice() {
+            const newPrice = parseInt(document.getElementById('set-price').value);
+            const { error } = await _supabase.from('game_state').update({ ticket_price: newPrice }).eq('id', 1);
+            if(!error) alert("Price synced globally.");
         }
 
         async function triggerDraw() {
             const { data: paidBets } = await _supabase.from('bets').select('*').eq('status', 'paid');
             const winNum = Math.floor(Math.random() * 12) + 1;
-            
-            // Logic: Pick a winner only if they paid for the correct number
             let winner = paidBets ? paidBets.find(b => b.number === winNum) : null;
+            let prize = winner ? (winner.odd * winner.price) : 0;
+            sessionOut += prize;
             
-            const winData = { 
-                last_winner_id: winner ? winner.player_id : 'NO WINNER',
-                last_win_num: winNum,
-                prize: winner ? (winner.odd * ticketPrice) : 0
-            };
-
-            await _supabase.from('game_state').update(winData).eq('id', 1);
-            
-            // Wipe the bets table for next round
+            await _supabase.from('game_state').update({ last_winner_id: winner ? winner.player_id : 'NO WINNER', last_win_num: winNum, prize: prize }).eq('id', 1);
+            updateAccountingUI();
             await _supabase.from('bets').delete().neq('id', 0);
         }
 
-        // --- REAL-TIME ENGINE ---
-        _supabase.channel('game-updates')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, () => {
-                if(isAdmin) fetchPendingBets();
-            })
+        _supabase.channel('main')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPendingBets())
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, payload => {
+                if(payload.new.ticket_price) ticketPrice = payload.new.ticket_price;
                 showWinner(payload.new);
-            })
-            .subscribe();
+            }).subscribe();
 
         function showWinner(data) {
+            new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3').play();
             document.getElementById('popup-id').innerText = data.last_winner_id;
             document.getElementById('popup-num').innerText = data.last_win_num;
             document.getElementById('popup-prize').innerText = Math.floor(data.prize);
-            
             document.getElementById('win-popup').classList.add('show');
-            setTimeout(() => {
-                document.getElementById('win-popup').classList.remove('show');
-            }, 7000);
+            setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); initGrid(); }, 8500);
         }
 
-        function unlockAdmin() {
-            const pin = prompt("Enter Admin PIN:");
-            if(pin === "1234") {
-                isAdmin = true;
-                document.getElementById('admin-content').classList.remove('hidden');
-                fetchPendingBets();
-            } else {
-                alert("Incorrect PIN");
-            }
+        function updateAccountingUI() {
+            document.getElementById('total-in').innerText = sessionIn;
+            document.getElementById('total-out').innerText = sessionOut;
+            document.getElementById('rev-display').innerText = (sessionIn - sessionOut).toFixed(0);
         }
 
-        // Simple Visual Timer (Local sync - in a real app, sync this to DB too)
+        function resetDailyStats() { if(confirm("Clear daily bookkeeping?")) { sessionIn = 0; sessionOut = 0; updateAccountingUI(); } }
+        function unlockAdmin() { if(prompt("PIN:") === "1234") { isAdmin = true; document.getElementById('admin-content').classList.remove('hidden'); fetchPendingBets(); } }
+        
         setInterval(() => {
             let now = new Date();
             let sec = 59 - now.getSeconds();
-            let min = 4 - (now.getMinutes() % 5);
-            document.getElementById('timer').innerText = `${min}:${sec < 10 ? '0' : ''}${sec}`;
-            if(min === 0 && sec === 0 && isAdmin) triggerDraw(); 
+            document.getElementById('timer').innerText = `0:${sec < 10 ? '0' : ''}${sec}`;
+            if(sec === 0 && isAdmin) triggerDraw();
         }, 1000);
 
         initGrid();
