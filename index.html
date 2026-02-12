@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIZZY 12 | Professional Shop Edition</title>
+    <title>FIZZY 12 | Shop Master Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #111122; --gold: #ffd700; }
@@ -11,37 +11,35 @@
         .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 15px; margin: 0 auto; }
         @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
         
-        /* Timer & Flash Effects */
-        .timer-box { font-size: 4.5rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); transition: 0.3s; }
+        /* UI Elements */
+        .timer-box { font-size: 4.5rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); }
         .panic { color: var(--danger) !important; text-shadow: 0 0 25px var(--danger) !important; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
         
         .status-bar { background: #1a1a2e; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; margin-bottom: 15px; }
 
-        /* Grid */
+        /* Model Grid */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .num-card { position: relative; height: 175px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.4s; overflow: hidden; }
+        .num-card { position: relative; height: 170px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.4s; overflow: hidden; }
         .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
         .num-text { font-weight: 900; font-size: 2.5rem; text-shadow: 2px 2px 10px #000; }
         .odd-badge { background: var(--primary); color: #000; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; }
+        .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(255,215,0,0.4); }
 
-        /* Highlight 8 & 9 */
-        .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+        /* Lucky Flash */
+        #lucky-flash { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 30px; border-radius: 50px; font-weight: 900; font-size: 1.5rem; z-index: 5000; display: none; box-shadow: 0 0 30px var(--gold); }
 
-        /* Lucky Number Animation */
-        #lucky-flash { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 30px; border-radius: 50px; font-weight: 900; font-size: 1.5rem; z-index: 5000; display: none; box-shadow: 0 0 30px var(--gold); animation: pulse 0.3s infinite; }
-
-        /* Result Popups */
-        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5,5,15,0.98); border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #win-popup.show { transform: translate(-50%, -50%) scale(1); }
-        .winner-host { position: absolute; top: -110px; left: 50%; transform: translateX(-50%); width: 240px; opacity: 0; transition: 1s; }
-        #win-popup.show .winner-host { opacity: 1; }
-
-        /* Admin */
+        /* Admin Dashboard */
         .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; }
         .hidden { display: none !important; }
+        .price-control { background: #000; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #444; text-align: center;}
+        .price-control input { width: 60px; background: #222; border: 1px solid var(--accent); color: white; padding: 5px; border-radius: 5px; text-align: center; font-weight: bold; }
         .req-card { background: #000; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
         .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+
+        /* Win Popup */
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5,5,15,0.98); border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #win-popup.show { transform: translate(-50%, -50%) scale(1); }
     </style>
 </head>
 <body>
@@ -49,14 +47,11 @@
     <div id="lucky-flash">🔥 HOT NUMBER: <span id="lucky-num">#8</span> 🔥</div>
 
     <div id="win-popup">
-        <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZqOHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6Z3Z6OHB6bmR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/l41lI4bEBpG2LQXuw/giphy.gif" class="winner-host">
-        <div style="margin-top: 60px;">
-            <small style="color:var(--gold)">WINNING NUMBER</small>
-            <div id="popup-num" style="font-size: 5rem; font-weight: 900; color: white;">#0</div>
-            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
-                <div id="popup-id" style="font-size: 1.5rem; font-weight: bold;">...</div>
-                <div id="popup-prize" style="font-size: 2.2rem; color: var(--primary); font-weight: 900;">0 ETB</div>
-            </div>
+        <div style="font-size: 1.2rem; color: var(--gold); margin-bottom: 10px;">ROUND RESULT</div>
+        <div id="popup-num" style="font-size: 6rem; font-weight: 900; line-height: 1;">#0</div>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-top: 20px;">
+            <div id="popup-id" style="color: var(--accent); font-weight: bold;">...</div>
+            <div id="popup-prize" style="font-size: 2.2rem; color: var(--primary); font-weight: 900;">0 ETB</div>
         </div>
     </div>
 
@@ -65,20 +60,26 @@
             <div id="timer" class="timer-box">3:00</div>
             <div class="status-bar">
                 <span>ID: <b id="display-id" style="color:var(--accent)">...</b></span>
-                <button onclick="toggleMute()" id="mute-btn" style="background:none; border:1px solid #444; color:#888; border-radius:5px; padding:4px 10px; cursor:pointer;">🔊 ON</button>
+                <span>TICKET: <b id="view-price" style="color:var(--gold)">20</b> ETB</span>
+                <button onclick="toggleMute()" id="mute-btn" style="background:none; border:1px solid #444; color:#888; border-radius:5px; padding:4px 10px;">🔊 ON</button>
             </div>
             <div class="grid" id="grid"></div>
         </div>
 
         <div class="admin-side">
-            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#444;">🔒 ADMIN</h4>
+            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#333;">🔒 SHOP ADMIN</h4>
             <div id="admin-content" class="hidden">
+                <div class="price-control">
+                    <label>SET PRICE:</label>
+                    <input type="number" id="price-input" value="20">
+                    <button onclick="updateGlobalPrice()" style="background:var(--accent); border:none; padding:5px 10px; border-radius:5px; font-weight:bold;">UPDATE</button>
+                </div>
                 <div style="background:#000; padding:15px; border-radius:10px; text-align:center; border:1px solid #222; margin-bottom:15px;">
                     <small style="color:#888">SHOP PROFIT</small><br>
                     <span id="rev-display" style="font-size: 2rem; font-weight: bold; color: var(--primary);">0</span> <small>ETB</small>
                 </div>
-                <div id="request-queue" style="max-height: 300px; overflow-y: auto;"></div>
-                <button onclick="triggerDraw()" class="btn-draw">SMART DRAW</button>
+                <div id="request-queue" style="max-height: 250px; overflow-y: auto; margin-bottom: 10px;"></div>
+                <button onclick="triggerDraw()" class="btn-draw">EXECUTE SMART DRAW</button>
             </div>
         </div>
     </div>
@@ -93,8 +94,11 @@
         document.getElementById('display-id').innerText = myID;
 
         let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false, isMuted = false;
+        
+        // Sounds
         const alert30s = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
         const tickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3');
         const luckySound = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
 
         function toggleMute() { isMuted = !isMuted; document.getElementById('mute-btn').innerText = isMuted ? "🔇 OFF" : "🔊 ON"; }
@@ -103,46 +107,47 @@
         function initGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = '';
             const models = [
-                "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1529139513055-1197978975b6?auto=format&fit=crop&w=400&q=80", // #8
-                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80", // #9
-                "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80",
-                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80"
+                "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400", "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400",
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=400",
+                "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=400", "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=400",
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400", "https://images.unsplash.com/photo-1529139513055-1197978975b6?q=80&w=400", // #8
+                "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=400", // #9
+                "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=400", "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400",
+                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
             ];
             for(let i=1; i<=12; i++) {
                 let odd = (1.5 + (Math.abs(Math.sin(i)) * 9.5)).toFixed(1);
                 let hotClass = (i === 8 || i === 9) ? "hot-card" : "";
-                grid.innerHTML += `<div id="card-${i}" class="num-card ${hotClass}" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i}, ${odd})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odd}x</div></div></div>`;
+                grid.innerHTML += `<div class="num-card ${hotClass}" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i}, ${odd})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odd}x</div></div></div>`;
             }
+        }
+
+        async function updateGlobalPrice() {
+            let p = document.getElementById('price-input').value;
+            await _supabase.from('game_state').update({ price: parseInt(p) }).eq('id', 1);
+            alert("Price set to " + p + " ETB");
         }
 
         async function placeBet(n, odd) {
             if(!confirm(`Bet #${n} for ${ticketPrice} ETB?`)) return;
             await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: parseFloat(odd), status: 'pending', price: ticketPrice }]);
-            alert("✅ Request sent! Pay at counter.");
+            alert("Request sent! Show ID to counter.");
         }
 
         async function triggerDraw() {
             const { data: paid } = await _supabase.from('bets').select('*').eq('status', 'paid');
-            let totalIn = paid ? paid.reduce((sum, b) => sum + b.price, 0) : 0;
+            let totalIn = paid ? paid.reduce((s, b) => s + b.price, 0) : 0;
             sessionIn += totalIn;
-            let winNum = 0, winner = null, prize = 0, found = false;
-            let attempts = 0;
-            while (attempts < 30 && !found) {
-                let trialNum = Math.floor(Math.random() * 12) + 1;
-                let trialWinner = paid ? paid.find(b => b.number === trialNum) : null;
-                let trialPrize = trialWinner ? (trialWinner.odd * trialWinner.price) : 0;
-                if (trialPrize <= totalIn) { winNum = trialNum; winner = trialWinner; prize = trialPrize; found = true; }
+            
+            let winNum = 0, winner = null, prize = 0, found = false, attempts = 0;
+            while (attempts < 50 && !found) {
+                let tNum = Math.floor(Math.random() * 12) + 1;
+                let tWinner = paid ? paid.find(b => b.number === tNum) : null;
+                let tPrize = tWinner ? (tWinner.odd * tWinner.price) : 0;
+                if (tPrize <= totalIn) { winNum = tNum; winner = tWinner; prize = tPrize; found = true; }
                 attempts++;
             }
-            if (!found) {
+            if (!found) { // Payout-free backup
                 const betNums = paid ? paid.map(b => b.number) : [];
                 for (let i = 1; i <= 12; i++) if (!betNums.includes(i)) { winNum = i; break; }
             }
@@ -152,26 +157,24 @@
             updateUI();
         }
 
-        async function verifyBet(id, p) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); sessionIn += p; updateUI(); fetchPending(); }
+        async function verifyBet(id, p) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); fetchPending(); }
 
-        _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPending())
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, p => {
-                const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3');
+        _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, p => {
+            if (p.new.price) { ticketPrice = p.new.price; document.getElementById('view-price').innerText = ticketPrice; }
+            if (p.new.last_win_num !== undefined) {
                 playSound(winSound);
                 document.getElementById('popup-num').innerText = "#" + p.new.last_win_num;
                 document.getElementById('popup-id').innerText = p.new.last_winner_id;
                 document.getElementById('popup-prize').innerText = Math.floor(p.new.prize) + " ETB";
                 document.getElementById('win-popup').classList.add('show');
-                if(p.new.last_winner_id === myID) {
-                    localStorage.getItem('isMuted') !== 'true' && luckySound.play();
-                }
-                setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); initGrid(); }, 10000);
-            }).subscribe();
+                setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); initGrid(); }, 12000);
+            }
+        }).on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPending()).subscribe();
 
         async function fetchPending() {
             const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
             const q = document.getElementById('request-queue');
-            q.innerHTML = data.length ? data.map(b => `<div class="req-card"><div><b>${b.player_id}</b> (#${b.number})</div><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;color:black;font-weight:bold;">PAID</button></div>`).join('') : '<p style="text-align:center;color:#444">Waiting...</p>';
+            q.innerHTML = data.length ? data.map(b => `<div class="req-card"><div><b>${b.player_id}</b> (#${b.number})</div><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary);border:none;padding:5px 10px;border-radius:5px;font-weight:bold;">PAID</button></div>`).join('') : '<p style="text-align:center;color:#444">Waiting...</p>';
         }
 
         function unlockAdmin() { if(prompt("PIN:") === "1234") { isAdmin = true; document.getElementById('admin-content').classList.remove('hidden'); fetchPending(); } }
@@ -181,27 +184,18 @@
             let now = new Date();
             let total = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
             let left = 180 - (total % 180);
-            const tBox = document.getElementById('timer');
-            tBox.innerText = `${Math.floor(left/60)}:${(left%60)<10?'0':''}${left%60}`;
+            document.getElementById('timer').innerText = `${Math.floor(left/60)}:${(left%60)<10?'0':''}${left%60}`;
             
-            // 🔥 LUCKY NUMBER FLASH AT 1:00
             if(left === 60) {
                 let lucky = [8, 9, Math.floor(Math.random() * 12) + 1][Math.floor(Math.random()*3)];
                 document.getElementById('lucky-num').innerText = "#" + lucky;
                 document.getElementById('lucky-flash').style.display = 'block';
-                document.getElementById(`card-${lucky}`).style.transform = "scale(1.1)";
-                document.getElementById(`card-${lucky}`).style.zIndex = "10";
                 playSound(luckySound);
-                setTimeout(() => { 
-                    document.getElementById('lucky-flash').style.display = 'none';
-                    document.getElementById(`card-${lucky}`).style.transform = "scale(1)";
-                }, 10000);
+                setTimeout(() => document.getElementById('lucky-flash').style.display = 'none', 8000);
             }
-
-            if(left <= 30) tBox.classList.add('panic'); else tBox.classList.remove('panic');
-            if(left === 30) playSound(alert30s);
+            if(left === 30) { document.getElementById('timer').classList.add('panic'); playSound(alert30s); }
             if(left <= 5 && left > 0) playSound(tickSound);
-            if(left === 180 && isAdmin) triggerDraw();
+            if(left === 180) { document.getElementById('timer').classList.remove('panic'); if(isAdmin) triggerDraw(); }
         }, 1000);
 
         initGrid();
