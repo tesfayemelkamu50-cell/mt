@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIZZY 12 | Professional Sportsbook</title>
+    <title>SADOR 12 | Professional Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #161625; --gold: #ffd700; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; overflow-x: hidden; }
         .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 15px; margin: 0 auto; }
         @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
-        
-        /* UI Elements */
+
+        /* Splash Screen */
+        #loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.8s; }
+        .loader-circle { width: 80px; height: 80px; border: 5px solid #1a1a2e; border-top: 5px solid var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+        .fade-out { opacity: 0; pointer-events: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Game UI */
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .timer-box { font-size: 3.5rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px rgba(46, 204, 113, 0.3); }
-        .help-btn { background: #333; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
-        
+        .help-btn { background: #333; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-weight: bold; cursor: pointer; font-size: 1.5rem; }
         .status-bar { background: #1a1a2e; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; }
 
-        /* Minimalist Grid */
+        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .num-card { 
-            position: relative; height: 120px; background: var(--card-bg); border-radius: 15px; cursor: pointer; border: 2px solid #252545; 
+            position: relative; height: 130px; background: var(--card-bg); border-radius: 15px; cursor: pointer; border: 2px solid #252545; 
             display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; 
         }
         .num-card:hover { transform: translateY(-3px); border-color: var(--accent); }
@@ -29,52 +34,70 @@
         .odd-badge { background: var(--primary); color: #000; font-weight: 900; padding: 4px 10px; border-radius: 6px; font-size: 1rem; margin-top: 8px; }
         .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
 
-        /* Help & Win Overlays */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; display: none; justify-content: center; align-items: center; padding: 20px; }
-        .overlay-content { position: relative; max-width: 500px; width: 100%; text-align: center; }
+        /* Overlays */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 5000; display: none; justify-content: center; align-items: center; padding: 20px; }
         .overlay.show { display: flex; }
-        .close-btn { position: absolute; top: -40px; right: 0; background: white; border: none; padding: 5px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-
-        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: #0a0a15; border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.5s; }
+        
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: #0a0a15; border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #win-popup.show { transform: translate(-50%, -50%) scale(1); }
-        
-        /* Admin */
+
+        /* Admin Panels */
         .admin-side { background: #111122; padding: 20px; border-radius: 20px; border: 1px solid #333; }
+        .admin-input { background: #000; color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+        .report-box { background: #000; padding: 15px; border-radius: 10px; border: 1px solid var(--accent); margin-top: 15px; display: none; }
         .hidden { display: none !important; }
-        .admin-input { background: #000; color: white; border: 1px solid #444; padding: 10px; border-radius: 5px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
-        
+
+        /* Receipt (Printing Only) */
         #receipt { display: none; background: white; color: black; padding: 20px; font-family: monospace; text-align: center; }
         @media print { body * { visibility: hidden; } #receipt, #receipt * { visibility: visible; } #receipt { display: block; position: absolute; left: 0; top: 0; width: 100%; } }
     </style>
 </head>
 <body>
 
-    <div id="help-overlay" class="overlay">
-        <div class="overlay-content">
-            <button class="close-btn" onclick="toggleHelp()">CLOSE [X]</button>
-            <img src="https://r.jina.ai/i/4462615" alt="How to Play Fizzy 12" style="width: 100%; border-radius: 15px; border: 2px solid var(--gold);">
-        </div>
+    <div id="loader">
+        <div class="loader-circle"></div>
+        <h1 style="color:var(--gold); letter-spacing:8px; margin-top:20px;">SADOR 12</h1>
+        <p style="color:var(--accent)">ESTABLISHING SECURE CONNECTION...</p>
     </div>
 
-    <div id="receipt">
-        <h2>FIZZY 12 WINNER</h2>
-        <hr>
-        <p>PLAYER: <b id="r-id"></b></p>
-        <p>SELECTION: <b id="r-num"></b></p>
-        <p>PRIZE: <b id="r-prize"></b> ETB</p>
-        <hr>
-        <p id="r-date"></p>
+    <div id="help-overlay" class="overlay">
+        <div style="position:relative; max-width:500px; background:var(--card-bg); padding:30px; border-radius:20px; border:2px solid var(--gold); text-align:left;">
+            <button onclick="toggleHelp()" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h2 style="color:var(--gold); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:10px;">HOW TO PLAY</h2>
+            <div style="margin-top:20px; line-height:1.6; font-size:1.1rem;">
+                <p><b style="color:var(--accent)">1. PICK A LETTER:</b> Select <b>A to L</b> on the grid.</p>
+                <p><b style="color:var(--accent)">2. PLACE BET:</b> Confirm your choice and Multiplier.</p>
+                <p><b style="color:var(--accent)">3. PAY COUNTER:</b> Show your <b>Player ID</b> to the shop manager to activate your ticket.</p>
+                <p><b style="color:var(--accent)">4. WATCH DRAW:</b> When timer hits 0:00, the winner is revealed.</p>
+                <p><b style="color:var(--accent)">5. CLAIM WIN:</b> Click <b>PRINT</b> on the popup to get your prize voucher!</p>
+            </div>
+            <div style="background:#000; padding:15px; border-radius:10px; margin-top:20px; border:1px solid #444; text-align:center;">
+                <small style="color:var(--primary);">CURRENT TICKET PRICE: <span id="help-price">20</span> ETB</small>
+            </div>
+            <button onclick="toggleHelp()" style="width:100%; margin-top:20px; background:var(--gold); color:black; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer;">START PLAYING</button>
+        </div>
     </div>
 
     <div id="win-popup">
         <h2 style="color:var(--gold); margin:0;">WINNING SELECTION</h2>
         <div id="popup-num" style="font-size: 8rem; font-weight: 900;">A</div>
         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
-            <div id="popup-id" style="color: var(--accent);">...</div>
-            <div id="popup-prize" style="font-size: 2.2rem; color: var(--primary); font-weight: 900;">0 ETB</div>
+            <div id="popup-id" style="color: var(--accent); font-weight: bold;">...</div>
+            <div id="popup-prize" style="font-size: 2.5rem; color: var(--primary); font-weight: 900;">0 ETB</div>
         </div>
         <button id="claim-btn" onclick="window.print()" style="margin-top: 15px; background: white; padding: 12px; width: 100%; display: none; cursor: pointer; font-weight: bold; border: none; border-radius: 8px;">🖨️ PRINT RECEIPT</button>
+    </div>
+
+    <div id="receipt">
+        <h2>SADOR 12 WINNER</h2>
+        <hr>
+        <p>PLAYER ID: <b id="r-id"></b></p>
+        <p>LETTER: <b id="r-num"></b></p>
+        <p>PRIZE: <b id="r-prize"></b> ETB</p>
+        <hr>
+        <p id="r-date"></p>
+        <p>Verified SADOR 12 Shop Voucher</p>
     </div>
 
     <div class="container">
@@ -82,7 +105,8 @@
             <div class="header-row">
                 <button class="help-btn" onclick="toggleHelp()">?</button>
                 <div id="timer" class="timer-box">3:00</div>
-                <div style="width:40px;"></div> </div>
+                <div style="width:45px;"></div>
+            </div>
             <div class="status-bar">
                 <span>PLAYER: <b id="display-id" style="color:var(--accent)">...</b></span>
                 <span>TICKET: <b id="view-price" style="color:var(--gold)">20</b> ETB</span>
@@ -91,24 +115,33 @@
         </div>
 
         <div class="admin-side">
-            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#444;">🔒 SHOP ADMIN</h4>
+            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#444;">🔒 SHOP MANAGEMENT</h4>
             <div id="admin-content" class="hidden">
-                <div style="margin-bottom:15px;">
-                    <small>SET TICKET PRICE:</small>
-                    <input type="number" id="price-input" class="admin-input" value="20">
-                    <button onclick="updatePrice()" style="width:100%; background:var(--accent); border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">SAVE PRICE</button>
-                </div>
-                <div style="text-align:center; background:#000; padding:15px; border-radius:10px; margin-bottom:15px;">
-                    <small style="color:#888">SHOP REVENUE</small><br>
+                <small>TICKET PRICE (ETB):</small>
+                <input type="number" id="price-input" class="admin-input" value="20">
+                <button onclick="updatePrice()" style="width:100%; background:var(--accent); border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">UPDATE PRICE</button>
+                
+                <div style="text-align:center; background:#000; padding:15px; border-radius:10px; margin-top:15px;">
+                    <small style="color:#888">SESSION REVENUE</small><br>
                     <span id="rev-display" style="font-size: 2.2rem; color: var(--primary); font-weight: bold;">0</span> <small>ETB</small>
                 </div>
-                <div id="req-queue" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
-                <button onclick="triggerDraw()" class="btn-draw">EXECUTE SMART DRAW</button>
+
+                <div id="report-box" class="report-box">
+                    <h3 style="color:var(--accent); margin-top:0;">Daily Ledger</h3>
+                    <p id="report-stats" style="font-family:monospace;"></p>
+                    <button onclick="this.parentElement.style.display='none'" style="width:100%; background:#333; color:white; border:none; padding:5px;">CLOSE</button>
+                </div>
+
+                <div id="req-queue" style="max-height: 200px; overflow-y: auto; margin-top:15px;"></div>
+                
+                <button onclick="triggerDraw()" class="btn-draw">EXECUTE DRAW</button>
+                <button onclick="generateReport()" style="width:100%; background:transparent; color:var(--accent); border:1px solid var(--accent); padding:10px; border-radius:10px; margin-top:10px; cursor:pointer;">📊 PROFIT REPORT</button>
             </div>
         </div>
     </div>
 
     <script>
+        // CONFIG
         const SUPABASE_URL = 'https://fixevmectotnqrwkupvp.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_4SWF8XqX8s5Eut93C3wMOA_dLOZQ2Vq';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -118,9 +151,9 @@
         localStorage.setItem('fizzy_id', myID);
         document.getElementById('display-id').innerText = myID;
 
-        let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false;
-        let currentOdds = [];
+        let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false, currentOdds = [];
 
+        // LOGIC
         function toggleHelp() { document.getElementById('help-overlay').classList.toggle('show'); }
 
         function shuffleOdds() {
@@ -156,71 +189,94 @@
         async function updatePrice() {
             let p = document.getElementById('price-input').value;
             await _supabase.from('shop_settings').update({ current_price: p }).eq('id', 1);
+            alert("Price updated!");
         }
 
-        async function placeBet(n, odd) {
-            if(!confirm(`Bet Letter ${LETTERS[n]} at ${odd}x for ${ticketPrice} ETB?`)) return;
-            await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: odd, price: ticketPrice }]);
-            alert("Bet sent! Please pay at the counter.");
+        async function placeBet(idx, odd) {
+            if(!confirm(`Bet Letter ${LETTERS[idx]} for ${ticketPrice} ETB?`)) return;
+            await _supabase.from('bets').insert([{ player_id: myID, number: idx, odd: odd, price: ticketPrice }]);
+            alert("Bet sent! Please pay at counter.");
         }
 
         async function triggerDraw() {
             const { data: paid } = await _supabase.from('bets').select('*').eq('status', 'paid');
             let totalIn = paid ? paid.reduce((s, b) => s + b.price, 0) : 0;
-            sessionIn += totalIn;
+            
+            let winIdx = Math.floor(Math.random()*12);
+            let winners = paid ? paid.filter(b => b.number === winIdx) : [];
+            let totalPayout = winners.reduce((s, b) => s + (b.odd * b.price), 0);
 
-            let winNum = Math.floor(Math.random()*12);
-            let winner = paid ? paid.find(b => b.number === winNum) : null;
-            let prize = winner ? (winner.odd * winner.price) : 0;
-
-            if (prize > totalIn) {
-                const safeNums = [];
+            // HOUSE PROTECTION
+            if (totalPayout > totalIn) {
+                const safe = [];
                 for(let i=0; i<12; i++) {
-                    let b = paid ? paid.find(x => x.number === i) : null;
-                    if(!b || (b.odd * b.price) <= totalIn) safeNums.push(i);
+                    let pWinners = paid ? paid.filter(x => x.number === i) : [];
+                    let pPayout = pWinners.reduce((s, b) => s + (b.odd * b.price), 0);
+                    if(pPayout <= totalIn) safe.push(i);
                 }
-                winNum = safeNums[Math.floor(Math.random()*safeNums.length)];
-                winner = paid ? paid.find(b => b.number === winNum) : null;
-                prize = winner ? (winner.odd * winner.price) : 0;
+                winIdx = safe.length > 0 ? safe[Math.floor(Math.random()*safe.length)] : winIdx;
+                winners = paid ? paid.filter(b => b.number === winIdx) : [];
+                totalPayout = winners.reduce((s, b) => s + (b.odd * b.price), 0);
             }
 
-            sessionOut += prize;
-            await _supabase.from('game_state').update({ last_winner_id: winner ? winner.player_id : 'NO WINNER', last_win_num: winNum, prize: prize }).eq('id', 1);
+            sessionIn += totalIn; sessionOut += totalPayout;
+
+            await _supabase.from('game_history').insert([{
+                winning_letter: LETTERS[winIdx],
+                total_pool: totalIn, payout: totalPayout,
+                profit: (totalIn - totalPayout), winner_count: winners.length
+            }]);
+
+            await _supabase.from('game_state').update({ 
+                last_winner_id: winners.length > 0 ? winners[0].player_id : 'NO WINNER', 
+                last_win_num: winIdx, prize: totalPayout 
+            }).eq('id', 1);
+
             await _supabase.from('bets').delete().neq('id', 0);
             updateUI();
+        }
+
+        async function generateReport() {
+            const today = new Date().toISOString().split('T')[0];
+            const { data } = await _supabase.from('game_history').select('*').gte('draw_time', today);
+            if (data) {
+                const tin = data.reduce((s, r) => s + r.total_pool, 0);
+                const tout = data.reduce((s, r) => s + r.payout, 0);
+                document.getElementById('report-box').style.display = 'block';
+                document.getElementById('report-stats').innerHTML = `REVENUE: ${tin} ETB<br>PAYOUTS: ${tout} ETB<br>----------------<br>PROFIT: <b>${tin-tout} ETB</b>`;
+            }
         }
 
         async function fetchPending() {
             const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
             const q = document.getElementById('req-queue');
             q.innerHTML = data.length ? data.map(b => `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:#000; padding:8px; border-radius:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:#000; padding:10px; border-radius:8px; border:1px solid #333;">
                     <span><b>${b.player_id}</b> (${LETTERS[b.number]})</span>
-                    <button onclick="verifyBet(${b.id})" style="background:var(--primary); border:none; padding:5px 10px; border-radius:3px; font-weight:bold; cursor:pointer;">PAID</button>
+                    <button onclick="verifyBet(${b.id})" style="background:var(--primary); border:none; padding:5px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">PAID</button>
                 </div>`).join('') : '<p style="text-align:center; color:#444;">No pending bets</p>';
         }
 
-        async function verifyBet(id) { 
-            await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); 
-            fetchPending(); 
-        }
+        async function verifyBet(id) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); fetchPending(); }
 
+        // REALTIME
         _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, p => {
-            const letterWinner = LETTERS[p.new.last_win_num] || "A";
-            document.getElementById('popup-num').innerText = letterWinner;
+            const winLetter = LETTERS[p.new.last_win_num];
+            document.getElementById('popup-num').innerText = winLetter;
             document.getElementById('popup-id').innerText = p.new.last_winner_id;
             document.getElementById('popup-prize').innerText = Math.floor(p.new.prize) + " ETB";
-            
             document.getElementById('r-id').innerText = p.new.last_winner_id;
-            document.getElementById('r-num').innerText = letterWinner;
+            document.getElementById('r-num').innerText = winLetter;
             document.getElementById('r-prize').innerText = Math.floor(p.new.prize);
             document.getElementById('r-date').innerText = new Date().toLocaleString();
 
             if(p.new.last_winner_id === myID) document.getElementById('claim-btn').style.display = 'block';
             document.getElementById('win-popup').classList.add('show');
-            setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); shuffleOdds(); initGrid(); }, 12000);
+            setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); shuffleOdds(); initGrid(); document.getElementById('claim-btn').style.display='none'; }, 12000);
         }).on('postgres_changes', { event: '*', schema: 'public', table: 'shop_settings' }, p => {
-            ticketPrice = p.new.current_price; document.getElementById('view-price').innerText = ticketPrice;
+            ticketPrice = p.new.current_price; 
+            document.getElementById('view-price').innerText = ticketPrice;
+            document.getElementById('help-price').innerText = ticketPrice;
         }).subscribe();
 
         function updateUI() { document.getElementById('rev-display').innerText = (sessionIn - sessionOut).toFixed(0); }
@@ -229,8 +285,10 @@
             let left = 180 - ((new Date().getMinutes() * 60 + new Date().getSeconds()) % 180);
             document.getElementById('timer').innerText = `${Math.floor(left/60)}:${(left%60)<10?'0':''}${left%60}`;
             if(left === 180 && isAdmin) triggerDraw();
+            if(isAdmin && left % 5 === 0) fetchPending();
         }, 1000);
 
+        window.addEventListener('load', () => { setTimeout(() => { document.getElementById('loader').classList.add('fade-out'); }, 1500); });
         shuffleOdds(); initGrid();
     </script>
 </body>
