@@ -3,67 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIZZY 12 | Shop Master Pro</title>
+    <title>FIZZY 12 | Professional Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2ecc71; --danger: #e74c3c; --accent: #00d2ff; --bg: #05050a; --card-bg: #111122; --gold: #ffd700; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; }
         .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 350px; gap: 15px; margin: 0 auto; }
         @media (max-width: 950px) { .container { grid-template-columns: 1fr; } }
         
         /* UI Elements */
-        .timer-box { font-size: 4.5rem; font-weight: 900; text-align: center; color: var(--primary); text-shadow: 0 0 20px var(--primary); }
-        .panic { color: var(--danger) !important; text-shadow: 0 0 25px var(--danger) !important; animation: pulse 0.5s infinite; }
-        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
-        .status-bar { background: #1a1a2e; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; margin-bottom: 15px; }
+        .timer-box { font-size: 4rem; font-weight: 900; text-align: center; color: var(--primary); margin-bottom: 10px; }
+        .status-bar { background: #1a1a2e; padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; }
 
-        /* Model Grid */
+        /* Grid & Dynamic Cards */
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .num-card { position: relative; height: 180px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.4s; overflow: hidden; }
-        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
-        .num-text { font-weight: 900; font-size: 2.5rem; text-shadow: 2px 2px 10px #000; }
-        .odd-badge { background: var(--primary); color: #000; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; }
-        .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 20px rgba(255,215,0,0.5); transform: scale(1.02); }
+        .num-card { position: relative; height: 160px; background-size: cover; background-position: center; border-radius: 15px; cursor: pointer; border: 2px solid #252545; transition: 0.3s; overflow: hidden; }
+        .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent 70%); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 8px; }
+        .num-text { font-weight: 900; font-size: 2.2rem; }
+        .odd-badge { background: var(--primary); color: #000; font-weight: 900; padding: 2px 8px; border-radius: 5px; font-size: 0.9rem; margin-top: 5px; }
+        .hot-card { border: 2px solid var(--gold) !important; box-shadow: 0 0 15px var(--gold); }
 
-        /* Popups & Receipts */
-        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: rgba(5,5,15,0.98); border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        /* Popups */
+        #win-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 85%; max-width: 400px; background: #05050a; border: 4px solid var(--gold); border-radius: 20px; z-index: 3000; padding: 30px; text-align: center; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #win-popup.show { transform: translate(-50%, -50%) scale(1); }
-        #receipt { display: none; background: white; color: black; padding: 20px; width: 300px; font-family: 'Courier New', monospace; text-align: center; border: 1px solid #000; }
-        @media print { body * { visibility: hidden; } #receipt, #receipt * { visibility: visible; } #receipt { display: block; position: absolute; left: 0; top: 0; width: 100%; } }
+        #receipt { display: none; background: white; color: black; padding: 20px; font-family: monospace; text-align: center; }
 
-        /* Admin Dashboard */
+        /* Admin */
         .admin-side { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #333; }
         .hidden { display: none !important; }
-        .control-group { background: #000; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
-        .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
-        
-        #lucky-flash { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 30px; border-radius: 50px; font-weight: 900; font-size: 1.5rem; z-index: 5000; display: none; box-shadow: 0 0 30px var(--gold); }
+        .admin-input { background: #000; color: white; border: 1px solid #444; padding: 8px; border-radius: 5px; width: 100%; margin: 5px 0; }
+        .btn-draw { width: 100%; background: var(--gold); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+
+        @media print { body * { visibility: hidden; } #receipt, #receipt * { visibility: visible; } #receipt { display: block; position: absolute; left: 0; top: 0; width: 100%; } }
     </style>
 </head>
 <body>
 
-    <div id="lucky-flash">🔥 HOT NUMBER: <span id="lucky-num">#8</span> 🔥</div>
-
     <div id="receipt">
-        <h2 style="margin:0;">FIZZY 12</h2>
-        <p>OFFICIAL WINNER TICKET</p>
+        <h2>FIZZY 12 WINNER</h2>
         <hr>
         <p>PLAYER: <b id="r-id"></b></p>
         <p>NUMBER: <b id="r-num"></b></p>
         <p>PRIZE: <b id="r-prize"></b> ETB</p>
         <hr>
         <p id="r-date"></p>
-        <p>*** Thank you for playing ***</p>
     </div>
 
     <div id="win-popup">
-        <div style="font-size: 1.2rem; color: var(--gold);">ROUND RESULT</div>
-        <div id="popup-num" style="font-size: 6rem; font-weight: 900; line-height: 1;">#0</div>
-        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-top: 15px;">
-            <div id="popup-id" style="color: var(--accent); font-weight: bold;">...</div>
+        <h2 style="color:var(--gold)">WINNING NUMBER</h2>
+        <div id="popup-num" style="font-size: 6rem; font-weight: 900;">#0</div>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <div id="popup-id" style="color: var(--accent);">...</div>
             <div id="popup-prize" style="font-size: 2.2rem; color: var(--primary); font-weight: 900;">0 ETB</div>
         </div>
-        <button id="claim-btn" onclick="window.print()" style="margin-top: 15px; background: white; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; display: none; width: 100%;">🖨️ PRINT RECEIPT</button>
+        <button id="claim-btn" onclick="window.print()" style="margin-top: 15px; background: white; padding: 10px; width: 100%; display: none; cursor: pointer; font-weight: bold;">🖨️ PRINT RECEIPT</button>
     </div>
 
     <div class="container">
@@ -72,117 +65,93 @@
             <div class="status-bar">
                 <span>ID: <b id="display-id" style="color:var(--accent)">...</b></span>
                 <span>TICKET: <b id="view-price" style="color:var(--gold)">20</b> ETB</span>
-                <button onclick="toggleMute()" id="mute-btn" style="background:none; border:1px solid #444; color:#888; border-radius:5px; cursor:pointer;">🔊 ON</button>
             </div>
             <div class="grid" id="grid"></div>
         </div>
 
         <div class="admin-side">
-            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center; color:#444;">🔒 ADMIN PANEL</h4>
+            <h4 onclick="unlockAdmin()" style="cursor:pointer; text-align:center;">🔒 SHOP ADMIN</h4>
             <div id="admin-content" class="hidden">
-                <div class="control-group">
-                    <small>SHOP TICKET PRICE</small><br>
-                    <input type="number" id="price-input" value="20" style="width:60px;">
-                    <button onclick="updateGlobalPrice()" style="background:var(--accent); border:none; padding:4px 8px; border-radius:4px; font-weight:bold;">SET</button>
+                <div style="margin-bottom:15px;">
+                    <label>Set Ticket Price (ETB):</label>
+                    <input type="number" id="price-input" class="admin-input" value="20">
+                    <button onclick="updatePrice()" style="width:100%; background:var(--accent); border:none; padding:5px; border-radius:5px; font-weight:bold;">UPDATE PRICE</button>
                 </div>
-                <div class="control-group" style="text-align:center;">
-                    <small>SESSION PROFIT</small><br>
-                    <span id="rev-display" style="font-size: 2rem; font-weight: bold; color: var(--primary);">0</span> <small>ETB</small>
+                <div style="text-align:center; background:#000; padding:10px; border-radius:10px; margin-bottom:15px;">
+                    <small>PROFIT</small><br>
+                    <span id="rev-display" style="font-size: 2rem; color: var(--primary); font-weight: bold;">0</span> ETB
                 </div>
-                <div id="request-queue" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
-                
-                <div class="control-group">
-                    <small>SECURITY</small><br>
-                    <input type="password" id="new-pin-input" placeholder="New PIN" style="width:100px;">
-                    <button onclick="changeAdminPin()" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; font-weight:bold;">UPDATE PIN</button>
-                </div>
-                
-                <button onclick="triggerDraw()" class="btn-draw">SMART DRAW NOW</button>
+                <div id="req-queue" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
+                <button onclick="triggerDraw()" class="btn-draw">SMART DRAW</button>
             </div>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://fixevmectotnqrwkupvp.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_4SWF8XqX8s5Eut93C3wMOA_dLOZQ2Vq';
+        const SUPABASE_URL = 'https://YOUR_PROJECT_URL.supabase.co';
+        const SUPABASE_KEY = 'YOUR_ANON_KEY';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let myID = localStorage.getItem('fizzy_player_id') || "PX-" + Math.floor(100 + Math.random() * 899);
-        localStorage.setItem('fizzy_player_id', myID);
+        let myID = localStorage.getItem('fizzy_id') || "PX-" + Math.floor(100+Math.random()*899);
+        localStorage.setItem('fizzy_id', myID);
         document.getElementById('display-id').innerText = myID;
 
-        let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false, isMuted = false;
-        
-        const alert30s = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-        const tickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-        const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3');
-        const luckySound = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
+        let ticketPrice = 20, sessionIn = 0, sessionOut = 0, isAdmin = false;
+        let currentOdds = [];
 
-        function toggleMute() { isMuted = !isMuted; document.getElementById('mute-btn').innerText = isMuted ? "🔇 OFF" : "🔊 ON"; }
-        function playSound(sound) { if(!isMuted) { sound.currentTime = 0; sound.play().catch(()=>{}); } }
+        // Shuffle Odds: 3 high, 6 mid, 3 low
+        function shuffleOdds() {
+            let o = [];
+            for(let i=0; i<3; i++) o.push((Math.random()*(20-10)+10).toFixed(1));
+            for(let i=0; i<6; i++) o.push((Math.random()*(9-4)+4).toFixed(1));
+            for(let i=0; i<3; i++) o.push((Math.random()*(3-1.5)+1.5).toFixed(1));
+            currentOdds = o.sort(() => Math.random() - 0.5);
+        }
 
         function initGrid() {
             const grid = document.getElementById('grid'); grid.innerHTML = '';
-            const models = [
-                "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400", "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400",
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=400",
-                "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=400", "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=400",
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400", 
-                "https://i.ibb.co/LdP5fCc/lady8.jpg", // #8 - Using a custom placeholder (Replace with your actual lady images)
-                "https://i.ibb.co/m0K0fkk/lady9.jpg", // #9
-                "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=400", "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400",
-                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
-            ];
+            const models = ["https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400", "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400", "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400", "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400", "https://i.ibb.co/LdP5fCc/lady8.jpg", "https://i.ibb.co/m0K0fkk/lady9.jpg", "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=400", "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400"];
+            
             for(let i=1; i<=12; i++) {
-                let odd = (1.5 + (Math.abs(Math.sin(i)) * 9.5)).toFixed(1);
-                grid.innerHTML += `<div class="num-card ${i==8||i==9?'hot-card':''}" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i}, ${odd})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odd}x</div></div></div>`;
+                let odd = currentOdds[i-1];
+                grid.innerHTML += `<div class="num-card ${odd>10?'hot-card':''}" style="background-image: url('${models[i-1]}')" onclick="placeBet(${i}, ${odd})"><div class="card-overlay"><span class="num-text">#${i}</span><div class="odd-badge">${odd}x</div></div></div>`;
             }
         }
 
-        async function updateGlobalPrice() {
-            let p = document.getElementById('price-input').value;
-            await _supabase.from('game_state').update({ price: parseInt(p) }).eq('id', 1);
-        }
-
         async function unlockAdmin() {
-            const entered = prompt("PIN:");
+            const pin = prompt("Admin PIN:");
             const { data } = await _supabase.from('shop_settings').select('admin_pin').eq('id', 1).single();
-            if (entered === data.admin_pin) {
-                isAdmin = true;
-                document.getElementById('admin-content').classList.remove('hidden');
-                fetchPending();
-            } else { alert("WRONG PIN"); }
+            if (pin === data.admin_pin) { isAdmin = true; document.getElementById('admin-content').classList.remove('hidden'); fetchPending(); }
         }
 
-        async function changeAdminPin() {
-            const np = document.getElementById('new-pin-input').value;
-            if(np.length < 4) return alert("Min 4 digits");
-            await _supabase.from('shop_settings').update({ admin_pin: np }).eq('id', 1);
-            alert("PIN Updated!");
+        async function updatePrice() {
+            let p = document.getElementById('price-input').value;
+            await _supabase.from('shop_settings').update({ current_price: p }).eq('id', 1);
         }
 
         async function placeBet(n, odd) {
-            if(!confirm(`Bet #${n} for ${ticketPrice} ETB?`)) return;
-            await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: parseFloat(odd), status: 'pending', price: ticketPrice }]);
-            alert("Request sent!");
+            if(!confirm(`Bet #${n} at ${odd}x?`)) return;
+            await _supabase.from('bets').insert([{ player_id: myID, number: n, odd: odd, price: ticketPrice }]);
+            alert("Request sent to shop cashier!");
         }
 
         async function triggerDraw() {
             const { data: paid } = await _supabase.from('bets').select('*').eq('status', 'paid');
             let totalIn = paid ? paid.reduce((s, b) => s + b.price, 0) : 0;
             sessionIn += totalIn;
-            
-            let winNum = 0, winner = null, prize = 0, found = false, attempts = 0;
+
+            let winNum = 0, winner = null, prize = 0, found = false;
+            let attempts = 0;
             while (attempts < 50 && !found) {
-                let tNum = Math.floor(Math.random() * 12) + 1;
+                let tNum = Math.floor(Math.random()*12)+1;
                 let tWinner = paid ? paid.find(b => b.number === tNum) : null;
                 let tPrize = tWinner ? (tWinner.odd * tWinner.price) : 0;
                 if (tPrize <= totalIn) { winNum = tNum; winner = tWinner; prize = tPrize; found = true; }
                 attempts++;
             }
-            if (!found) { 
+            if(!found) { // Payout-free pick
                 const betNums = paid ? paid.map(b => b.number) : [];
-                for (let i = 1; i <= 12; i++) if (!betNums.includes(i)) { winNum = i; break; }
+                for(let i=1; i<=12; i++) if(!betNums.includes(i)) { winNum = i; break; }
             }
             sessionOut += prize;
             await _supabase.from('game_state').update({ last_winner_id: winner ? winner.player_id : 'NO WINNER', last_win_num: winNum, prize: prize }).eq('id', 1);
@@ -190,53 +159,40 @@
             updateUI();
         }
 
-        async function verifyBet(id, p) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); fetchPending(); }
-
-        _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, p => {
-            if (p.new.price) { ticketPrice = p.new.price; document.getElementById('view-price').innerText = ticketPrice; }
-            if (p.new.last_win_num !== undefined) {
-                playSound(winSound);
-                document.getElementById('popup-num').innerText = "#" + p.new.last_win_num;
-                document.getElementById('popup-id').innerText = p.new.last_winner_id;
-                document.getElementById('popup-prize').innerText = Math.floor(p.new.prize) + " ETB";
-                
-                document.getElementById('r-id').innerText = p.new.last_winner_id;
-                document.getElementById('r-num').innerText = "#" + p.new.last_win_num;
-                document.getElementById('r-prize').innerText = Math.floor(p.new.prize);
-                document.getElementById('r-date').innerText = new Date().toLocaleString();
-
-                if(p.new.last_winner_id === myID) document.getElementById('claim-btn').style.display = 'block';
-                document.getElementById('win-popup').classList.add('show');
-                setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); document.getElementById('claim-btn').style.display = 'none'; initGrid(); }, 12000);
-            }
-        }).on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => isAdmin && fetchPending()).subscribe();
-
         async function fetchPending() {
             const { data } = await _supabase.from('bets').select('*').eq('status', 'pending');
-            const q = document.getElementById('request-queue');
-            q.innerHTML = data.length ? data.map(b => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${b.player_id} (#${b.number})</span><button onclick="verifyBet(${b.id}, ${b.price})" style="background:var(--primary); color:black; border:none; border-radius:3px;">PAID</button></div>`).join('') : 'No pending bets';
+            const q = document.getElementById('req-queue');
+            q.innerHTML = data.length ? data.map(b => `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${b.player_id} (#${b.number})</span><button onclick="verifyBet(${b.id})">PAID</button></div>`).join('') : 'Waiting...';
         }
+
+        async function verifyBet(id) { await _supabase.from('bets').update({ status: 'paid' }).eq('id', id); fetchPending(); }
+
+        _supabase.channel('room').on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, p => {
+            document.getElementById('popup-num').innerText = "#" + p.new.last_win_num;
+            document.getElementById('popup-id').innerText = p.new.last_winner_id;
+            document.getElementById('popup-prize').innerText = Math.floor(p.new.prize) + " ETB";
+            
+            document.getElementById('r-id').innerText = p.new.last_winner_id;
+            document.getElementById('r-num').innerText = "#" + p.new.last_win_num;
+            document.getElementById('r-prize').innerText = Math.floor(p.new.prize);
+            document.getElementById('r-date').innerText = new Date().toLocaleString();
+
+            if(p.new.last_winner_id === myID) document.getElementById('claim-btn').style.display = 'block';
+            document.getElementById('win-popup').classList.add('show');
+            setTimeout(() => { document.getElementById('win-popup').classList.remove('show'); shuffleOdds(); initGrid(); }, 12000);
+        }).on('postgres_changes', { event: '*', schema: 'public', table: 'shop_settings' }, p => {
+            ticketPrice = p.new.current_price; document.getElementById('view-price').innerText = ticketPrice;
+        }).subscribe();
 
         function updateUI() { document.getElementById('rev-display').innerText = (sessionIn - sessionOut).toFixed(0); }
 
         setInterval(() => {
-            let now = new Date();
-            let left = 180 - ((now.getMinutes() * 60 + now.getSeconds()) % 180);
+            let left = 180 - ((new Date().getMinutes() * 60 + new Date().getSeconds()) % 180);
             document.getElementById('timer').innerText = `${Math.floor(left/60)}:${(left%60)<10?'0':''}${left%60}`;
-            
-            if(left === 60) {
-                let lucky = [8, 9, Math.floor(Math.random() * 12) + 1][Math.floor(Math.random()*3)];
-                document.getElementById('lucky-num').innerText = "#" + lucky;
-                document.getElementById('lucky-flash').style.display = 'block';
-                playSound(luckySound);
-                setTimeout(() => document.getElementById('lucky-flash').style.display = 'none', 8000);
-            }
-            if(left === 30) { document.getElementById('timer').classList.add('panic'); playSound(alert30s); }
-            if(left <= 5 && left > 0) playSound(tickSound);
-            if(left === 180) { document.getElementById('timer').classList.remove('panic'); if(isAdmin) triggerDraw(); }
+            if(left === 180 && isAdmin) triggerDraw();
         }, 1000);
 
-        initGrid();
+        shuffleOdds(); initGrid();
     </script>
 </body>
 </html>
